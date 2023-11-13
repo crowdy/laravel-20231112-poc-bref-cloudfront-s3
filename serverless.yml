@@ -1,0 +1,45 @@
+service: laravel
+
+provider:
+  name: aws
+  # The AWS region in which to deploy (us-east-1 is the default)
+  region: ap-northeast-1
+  # Environment variables
+  environment:
+    APP_ENV: production # Or use ${sls:stage} if you want the environment to match the stage
+  stage: ${opt:stage, self:custom.defaultStage}
+
+custom:
+  defaultStage: dev
+
+package:
+  # Files and directories to exclude from deployment
+  patterns:
+    - '!node_modules/**'
+    - '!public/storage'
+    - '!resources/assets/**'
+    - '!storage/**'
+    - '!tests/**'
+
+functions:
+
+  # This function runs the Laravel website/API
+  web:
+    handler: public/index.php
+    runtime: php-81-fpm
+    timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
+    events:
+      - httpApi: '*'
+
+plugins:
+  # We need to include the Bref plugin
+  - ./vendor/bref/bref
+  - serverless-lift
+
+constructs:
+  website:
+    type: server-side-website
+    assets:
+      'favicon.ico': public/favicon.ico
+      '/robots.txt': public/robots.txt
+      # add here any file or directory that needs to be served from S3
